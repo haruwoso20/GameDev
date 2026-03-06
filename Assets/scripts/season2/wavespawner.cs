@@ -1,299 +1,681 @@
+
 // using UnityEngine;
+// using System.Collections;
+// using System.Collections.Generic;
 
-// public class WaveSpawner : MonoBehaviour
+// public class wavespawner : MonoBehaviour
 // {
+//     [Header("Enemy")]
 //     public GameObject enemyPrefab;
+//     public float groundY = -2f;
 
-//     public Transform leftSpawn;
-//     public Transform rightSpawn;
+//     [Header("Wave Settings")]
+//     public int maxWaves = 5;
 
-//     public float minSpawnDelay = 0.5f;
-//     public float maxSpawnDelay = 2f;
+//     [Header("Manual Enemy Count Per Wave")]
+//     public List<int> manualEnemiesPerWave = new List<int>();
 
-//     public int enemiesPerWave = 5;
+//     [Header("Random Enemy Range")]
+//     public int randomMinEnemies = 3;
+//     public int randomMaxEnemies = 8;
 
+//     private int enemiesAlive;
 //     private int currentWave = 1;
 
-//     public void StartWave()
+//     void Start()
 //     {
-//         StartCoroutine(SpawnWave());
+//         StartCoroutine(WaveLoop());
 //     }
 
-//     private System.Collections.IEnumerator SpawnWave()
+//     IEnumerator WaveLoop()
 //     {
-//         for (int i = 0; i < enemiesPerWave + currentWave; i++)
+//         while (currentWave <= maxWaves)
 //         {
-//             SpawnEnemy();
+//             int enemiesThisWave = GetEnemiesForWave();
 
-//             float delay = Random.Range(minSpawnDelay, maxSpawnDelay);
-//             yield return new WaitForSeconds(delay);
+//             SpawnWave(enemiesThisWave);
+
+//             yield return new WaitUntil(() => enemiesAlive <= 0);
+
+//             currentWave++;
+
+//             yield return new WaitForSeconds(2f);
 //         }
 
-//         currentWave++; // Increase difficulty every wave
+//         Debug.Log("PLAYER WINS!");
 //     }
 
-//     void SpawnEnemy()
+//     int GetEnemiesForWave()
 //     {
-//         bool spawnLeft = Random.value > 0.5f;
+//         // If manually set for this wave
+//         if (currentWave - 1 < manualEnemiesPerWave.Count)
+//         {
+//             return manualEnemiesPerWave[currentWave - 1];
+//         }
 
-//         Transform spawnPoint = spawnLeft ? leftSpawn : rightSpawn;
-
-//         GameObject enemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
-
-//         EnemyFollow ef = enemy.GetComponent<EnemyFollow>();
-
-//         // Randomize difficulty slightly
-//         ef.moveSpeed = Random.Range(2.5f, 4.5f);
-//         ef.attackDistance = Random.Range(0.6f, 1.2f);
+//         // Otherwise random
+//         return Random.Range(randomMinEnemies, randomMaxEnemies + 1);
 //     }
-// }
+
+//     void SpawnWave(int enemyCount)
+//     {
+//         enemiesAlive = enemyCount;
+
+//         Debug.Log("Wave " + currentWave + " started with " + enemyCount + " enemies.");
+
+//         for (int i = 0; i < enemyCount; i++)
+//         {
+//             float xPos = (i % 2 == 0) ? -9f : 9f;
+//             Vector2 spawnPos = new Vector2(xPos, groundY);
+
+//             GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+
+//             Damageable dmg = enemy.GetComponent<Damageable>();
+//             if (dmg != null)
+//             {
+//                 dmg.onDeath += OnEnemyDeath;
+//             }
+//         }
+//     }
+
+//     void OnEnemyDeath()
+//     {
+//         enemiesAlive--;
+//         Debug.Log("Enemy died. Remaining: " + enemiesAlive);
+//     }
+// }   
 
 // using UnityEngine;
 // using System.Collections;
 
+// public class wavespawner : MonoBehaviour
+// {
+//     [Header("Enemy")]
+//     public GameObject enemyPrefab;
+//     public float groundY = -2f;
+
+//     [Header("Spawn Range")]
+//     public float leftSpawnMin = -9f;
+//     public float leftSpawnMax = -6f;
+
+//     public float rightSpawnMin = 6f;
+//     public float rightSpawnMax = 9f;
+
+//     [Header("Wave Settings")]
+//     public int maxWaves = 6;
+
+//     [Header("Difficulty")]
+//     public int startEnemies = 3;
+//     public int enemiesIncreasePerWave = 2;
+
+//     [Header("Spawn Timing")]
+//     public float minSpawnDelay = 0.3f;
+//     public float maxSpawnDelay = 0.8f;
+
+//     private int enemiesAlive;
+//     private int currentWave = 1;
+
+//     void Start()
+//     {
+//         StartCoroutine(WaveLoop());
+//     }
+
+//     IEnumerator WaveLoop()
+//     {
+//         while (currentWave <= maxWaves)
+//         {
+//             int enemiesThisWave = startEnemies + (currentWave * enemiesIncreasePerWave);
+
+//             Debug.Log("Wave " + currentWave + " spawning " + enemiesThisWave + " enemies");
+
+//             yield return StartCoroutine(SpawnWave(enemiesThisWave));
+
+//             yield return new WaitUntil(() => enemiesAlive <= 0);
+
+//             currentWave++;
+
+//             yield return new WaitForSeconds(2f);
+//         }
+
+//         Debug.Log("PLAYER WINS!");
+//     }
+
+//     IEnumerator SpawnWave(int enemyCount)
+//     {
+//         enemiesAlive = enemyCount;
+
+//         for (int i = 0; i < enemyCount; i++)
+//         {
+//             float spawnX;
+
+//             if (Random.value > 0.5f)
+//             {
+//                 // spawn on left side
+//                 spawnX = Random.Range(leftSpawnMin, leftSpawnMax);
+//             }
+//             else
+//             {
+//                 // spawn on right side
+//                 spawnX = Random.Range(rightSpawnMin, rightSpawnMax);
+//             }
+
+//             Vector2 spawnPos = new Vector2(spawnX, groundY);
+
+//             GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+
+//             Damageable dmg = enemy.GetComponent<Damageable>();
+
+//             if (dmg != null)
+//             {
+//                 dmg.onDeath += OnEnemyDeath;
+//             }
+
+//             yield return new WaitForSeconds(Random.Range(minSpawnDelay, maxSpawnDelay));
+//         }
+//     }
+
+//     void OnEnemyDeath()
+//     {
+//         enemiesAlive--;
+//         Debug.Log("Enemy died. Remaining: " + enemiesAlive);
+//     }
+// }
+// using UnityEngine;
+// using System.Collections;
+
+// public class wavespawner : MonoBehaviour
+// {
+//     [Header("Enemy")]
+//     public GameObject enemyPrefab;
+//     public float groundY = -2f;
+
+//     [Header("Spawn Range")]
+//     public float leftSpawnMin = -9f;
+//     public float leftSpawnMax = -6f;
+
+//     public float rightSpawnMin = 6f;
+//     public float rightSpawnMax = 9f;
+
+//     [Header("Wave Settings")]
+//     public int maxWaves = 6;
+
+//     [Header("Enemy Count")]
+//     public int startEnemies = 3;
+//     public int enemiesIncreasePerWave = 2;
+
+//     [Header("Difficulty Scaling")]
+//     public float speedIncreasePerWave = 0.4f;
+//     public int healthIncreasePerWave = 10;
+
+//     [Header("Spawn Timing")]
+//     public float minSpawnDelay = 0.3f;
+//     public float maxSpawnDelay = 0.8f;
+
+//     private int enemiesAlive;
+//     private int currentWave = 1;
+
+//     void Start()
+//     {
+//         StartCoroutine(WaveLoop());
+//     }
+
+//     IEnumerator WaveLoop()
+//     {
+//         while (currentWave <= maxWaves)
+//         {
+//             int enemiesThisWave = startEnemies + (currentWave * enemiesIncreasePerWave);
+
+//             Debug.Log("Wave " + currentWave + " spawning " + enemiesThisWave);
+
+//             yield return StartCoroutine(SpawnWave(enemiesThisWave));
+
+//             yield return new WaitUntil(() => enemiesAlive <= 0);
+
+//             currentWave++;
+
+//             yield return new WaitForSeconds(2f);
+//         }
+
+//         Debug.Log("PLAYER WINS!");
+//     }
+
+//     IEnumerator SpawnWave(int enemyCount)
+//     {
+//         enemiesAlive = enemyCount;
+
+//         for (int i = 0; i < enemyCount; i++)
+//         {
+//             float spawnX;
+
+//             if (Random.value > 0.5f)
+//                 spawnX = Random.Range(leftSpawnMin, leftSpawnMax);
+//             else
+//                 spawnX = Random.Range(rightSpawnMin, rightSpawnMax);
+
+//             Vector2 spawnPos = new Vector2(spawnX, groundY);
+
+//             GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+
+//             // SCALE DIFFICULTY
+//             Demogorgan enemyScript = enemy.GetComponent<Demogorgan>();
+//             Damageable dmg = enemy.GetComponent<Damageable>();
+
+//             if (enemyScript != null)
+//                 enemyScript.walkSpeed += currentWave * speedIncreasePerWave;
+
+//             if (dmg != null)
+//             {
+//                 dmg.MaxHealth += currentWave * healthIncreasePerWave;
+//                 dmg.Health = dmg.MaxHealth;
+//                 dmg.onDeath += OnEnemyDeath;
+//             }
+
+//             yield return new WaitForSeconds(Random.Range(minSpawnDelay, maxSpawnDelay));
+//         }
+//     }
+
+//     void OnEnemyDeath()
+//     {
+//         enemiesAlive--;
+//         Debug.Log("Enemy died. Remaining: " + enemiesAlive);
+//     }
+// }
+// using UnityEngine;
+// using System.Collections;
+
+// public class wavespawner : MonoBehaviour
+// {
+//     [Header("Enemy")]
+//     public GameObject enemyPrefab;
+//     public float groundY = -2f;
+
+//     [Header("Spawn Range")]
+//     public float leftSpawnMin = -9f;
+//     public float leftSpawnMax = -6f;
+
+//     public float rightSpawnMin = 6f;
+//     public float rightSpawnMax = 9f;
+
+//     [Header("Wave Settings")]
+//     public int maxWaves = 6;
+
+//     [Header("Enemy Count")]
+//     public int startEnemies = 3;
+//     public int enemiesIncreasePerWave = 1;
+
+//     [Header("Difficulty Scaling")]
+//     public float baseSpeed = 3f;
+//     public float speedDecreasePerWave = 0.12f;   // speed reduces slightly
+//     public int healthIncreasePerWave = 3;        // enemies take more hits
+
+//     [Header("Spawn Timing")]
+//     public float minSpawnDelay = 0.4f;
+//     public float maxSpawnDelay = 0.9f;
+
+//     private int enemiesAlive;
+//     private int currentWave = 1;
+
+//     void Start()
+//     {
+//         StartCoroutine(WaveLoop());
+//     }
+
+//     IEnumerator WaveLoop()
+//     {
+//         while (currentWave <= maxWaves)
+//         {
+//             int enemiesThisWave = startEnemies + (currentWave * enemiesIncreasePerWave);
+
+//             Debug.Log("Wave " + currentWave + " spawning " + enemiesThisWave);
+
+//             yield return StartCoroutine(SpawnWave(enemiesThisWave));
+
+//             yield return new WaitUntil(() => enemiesAlive <= 0);
+
+//             currentWave++;
+
+//             yield return new WaitForSeconds(2f);
+//         }
+
+//         Debug.Log("PLAYER WINS!");
+//     }
+
+//     IEnumerator SpawnWave(int enemyCount)
+//     {
+//         enemiesAlive = enemyCount;
+
+//         for (int i = 0; i < enemyCount; i++)
+//         {
+//             float spawnX;
+
+//             if (Random.value > 0.5f)
+//                 spawnX = Random.Range(leftSpawnMin, leftSpawnMax);
+//             else
+//                 spawnX = Random.Range(rightSpawnMin, rightSpawnMax);
+
+//             Vector2 spawnPos = new Vector2(spawnX, groundY);
+
+//             GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+
+//             Demogorgan enemyScript = enemy.GetComponent<Demogorgan>();
+//             Damageable dmg = enemy.GetComponent<Damageable>();
+
+//             // SPEED decreases slightly every wave
+//             if (enemyScript != null)
+//             {
+//                 float newSpeed = baseSpeed - (currentWave * speedDecreasePerWave);
+//                 enemyScript.walkSpeed = Mathf.Max(1.5f, newSpeed); // prevents enemies from becoming too slow
+//             }
+
+//             // HEALTH increases every wave
+//             if (dmg != null)
+//             {
+//                 dmg.MaxHealth += currentWave * healthIncreasePerWave;
+//                 dmg.Health = dmg.MaxHealth;
+//                 dmg.onDeath += OnEnemyDeath;
+//             }
+
+//             yield return new WaitForSeconds(Random.Range(minSpawnDelay, maxSpawnDelay));
+//         }
+//     }
+
+//     void OnEnemyDeath()
+//     {
+//         enemiesAlive--;
+//     }
+// }
+
+// using System.Collections;
+// using UnityEngine;
+
 // public class WaveSpawner : MonoBehaviour
 // {
+//     [Header("Enemy")]
 //     public GameObject enemyPrefab;
 
-//     public float spawnInterval = 2f;
-
+//     [Header("Spawn Area")]
 //     public float minX = -8f;
 //     public float maxX = 8f;
-//     public float minY = -4f;
-//     public float maxY = 4f;
+//     public float groundY = -2f;
+
+//     [Header("Wave Settings")]
+//     public int totalWaves = 6;
+//     public float timeBetweenWaves = 4f;
+
+//     [Header("Enemies Per Wave")]
+//     public int baseEnemies = 3;
+//     public int increasePerWave = 2;   // slightly faster increase
+
+//     [Header("Enemy Difficulty Scaling")]
+//     public float baseSpeed = 2f;
+//     public float speedIncrease = 0.25f;  // slightly faster enemies
+
+//     public int baseHealth = 2;
+//     public int healthIncrease = 1;
+
+//     int currentWave = 0;
 
 //     void Start()
 //     {
-//         StartCoroutine(SpawnLoop());
+//         StartCoroutine(StartWaveSystem());
 //     }
 
-//     IEnumerator SpawnLoop()
+//     IEnumerator StartWaveSystem()
 //     {
-//         while (true)
+//         while (currentWave < totalWaves)
 //         {
-//             SpawnEnemy();
-//             yield return new WaitForSeconds(spawnInterval);
+//             currentWave++;
+
+//             int enemiesThisWave = baseEnemies + (currentWave * increasePerWave);
+
+//             Debug.Log("Wave " + currentWave + " started with " + enemiesThisWave + " enemies");
+
+//             for (int i = 0; i < enemiesThisWave; i++)
+//             {
+//                 SpawnEnemy();
+
+//                 // later waves spawn enemies slightly faster
+//                 float spawnDelay = Mathf.Lerp(1.2f, 0.5f, (float)currentWave / totalWaves);
+//                 yield return new WaitForSeconds(Random.Range(spawnDelay * 0.7f, spawnDelay));
+//             }
+
+//             yield return new WaitForSeconds(timeBetweenWaves);
 //         }
+
+//         Debug.Log("All waves finished!");
 //     }
 
 //     void SpawnEnemy()
 //     {
-//         Vector2 randomPosition = new Vector2(
-//             Random.Range(minX, maxX),
-//             Random.Range(minY, maxY)
-//         );
+//         float randomX = Random.Range(minX, maxX) + Random.Range(-0.8f, 0.8f);
+//         Vector2 spawnPos = new Vector2(randomX, groundY);
 
-//         Instantiate(enemyPrefab, randomPosition, Quaternion.identity);
+//         GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+
+//         Demogorgan enemyMove = enemy.GetComponent<Demogorgan>();
+//         Damageable dmg = enemy.GetComponent<Damageable>();
+
+//         int newHealth = baseHealth + (currentWave * healthIncrease);
+
+//         if (dmg != null)
+//         {
+//             dmg.MaxHealth = newHealth;
+//         }
+
+//         if (enemyMove != null)
+//         {
+//             float speed = baseSpeed + (currentWave * speedIncrease);
+
+//             // higher health slightly slows enemy
+//             speed -= newHealth * 0.08f;
+
+//             enemyMove.walkSpeed = Mathf.Clamp(speed, 1.6f, 3.2f);
+//         }
 //     }
 // }
-
-
-
-// using UnityEngine;
 // using System.Collections;
+// using UnityEngine;
 
 // public class WaveSpawner : MonoBehaviour
 // {
+//     [Header("Enemy")]
 //     public GameObject enemyPrefab;
-//     public float spawnInterval = 5f;   // time between waves
-//     public int enemiesPerWave = 3;     // number of enemies per side per wave
-//     public float groundY = -2f;        // ground level Y position
+
+//     [Header("Spawn Area")]
+//     public float minX = -8f;
+//     public float maxX = 8f;
+//     public float groundY = -2f;
+
+//     [Header("Wave Settings")]
+//     public int totalWaves = 6;
+//     public float timeBetweenWaves = 4f;
+
+//     [Header("Enemy Count")]
+//     public int baseEnemies = 4;
+//     public int waveIncrease = 2;
+
+//     [Header("Difficulty")]
+//     public float baseSpeed = 2f;
+//     public float speedIncrease = 0.25f;
+
+//     public int baseHealth = 2;
+//     public int healthIncrease = 1;
+
+//     int currentWave = 0;
 
 //     void Start()
 //     {
-//         StartCoroutine(SpawnLoop());
+//         StartCoroutine(StartWaveSystem());
 //     }
 
-//     IEnumerator SpawnLoop()
+//     IEnumerator StartWaveSystem()
 //     {
-//         while (true)
+//         while (currentWave < totalWaves)
 //         {
-//             SpawnWave();
-//             yield return new WaitForSeconds(spawnInterval);
+//             currentWave++;
+
+//             // Random enemy count per wave
+//             int minEnemies = baseEnemies + (currentWave * waveIncrease);
+//             int maxEnemies = minEnemies + 3;
+
+//             int enemiesThisWave = Random.Range(minEnemies, maxEnemies);
+
+//             Debug.Log("Wave " + currentWave + " started with " + enemiesThisWave + " enemies");
+
+//             for (int i = 0; i < enemiesThisWave; i++)
+//             {
+//                 SpawnEnemy();
+
+//                 float spawnDelay = Mathf.Lerp(1.1f, 0.4f, (float)currentWave / totalWaves);
+//                 yield return new WaitForSeconds(Random.Range(spawnDelay * 0.6f, spawnDelay));
+//             }
+
+//             yield return new WaitForSeconds(timeBetweenWaves);
 //         }
+
+//         Debug.Log("All waves finished!");
 //     }
 
-//     void SpawnWave()
+//     void SpawnEnemy()
 //     {
-//         // LEFT side spawns
-//         for (int i = 0; i < enemiesPerWave; i++)
+//         float randomX = Random.Range(minX, maxX) + Random.Range(-1f, 1f);
+//         Vector2 spawnPos = new Vector2(randomX, groundY);
+
+//         GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+
+//         Demogorgan enemyMove = enemy.GetComponent<Demogorgan>();
+//         Damageable dmg = enemy.GetComponent<Damageable>();
+
+//         int newHealth = baseHealth + (currentWave * healthIncrease);
+
+//         if (dmg != null)
 //         {
-//             Vector2 leftSpawn = new Vector2(-9f, groundY);
-//             Instantiate(enemyPrefab, leftSpawn, Quaternion.identity);
+//             dmg.MaxHealth = newHealth;
 //         }
 
-//         // RIGHT side spawns
-//         for (int i = 0; i < enemiesPerWave; i++)
+//         if (enemyMove != null)
 //         {
-//             Vector2 rightSpawn = new Vector2(9f, groundY);
-//             Instantiate(enemyPrefab, rightSpawn, Quaternion.identity);
+//             float speed = baseSpeed + (currentWave * speedIncrease);
+
+//             // add slight randomness to speed
+//             speed += Random.Range(-0.2f, 0.2f);
+
+//             // more health slightly slows enemy
+//             speed -= newHealth * 0.08f;
+
+//             enemyMove.walkSpeed = Mathf.Clamp(speed, 1.7f, 3.3f);
 //         }
 //     }
 // }
-
-
-// using UnityEngine;
-// using System.Collections;
-
-// public class WaveSpawner : MonoBehaviour
-// {
-//     public GameObject enemyPrefab;
-//     public float spawnInterval = 5f;   // time between waves
-//     public int enemiesPerWave = 3;     // number of enemies per side per wave
-//     public float groundY = -2f;        // ground level Y position
-
-//     void Start()
-//     {
-//         StartCoroutine(SpawnLoop());
-//     }
-
-//     IEnumerator SpawnLoop()
-//     {
-//         while (true)
-//         {
-//             SpawnWave();
-//             yield return new WaitForSeconds(spawnInterval);
-//         }
-//     }
-
-//     void SpawnWave()
-//     {
-//         // LEFT side spawns
-//         for (int i = 0; i < enemiesPerWave; i++)
-//         {
-//             Vector2 leftSpawn = new Vector2(-9f, groundY);
-//             GameObject enemy = Instantiate(enemyPrefab, leftSpawn, Quaternion.identity);
-
-//             // Ensure facing right
-//             Vector3 scale = enemy.transform.localScale;
-//             if (scale.x < 0) scale.x *= -1;
-//             enemy.transform.localScale = scale;
-//         }
-
-//         // RIGHT side spawns
-//         for (int i = 0; i < enemiesPerWave; i++)
-//         {
-//             Vector2 rightSpawn = new Vector2(9f, groundY);
-//             GameObject enemy = Instantiate(enemyPrefab, rightSpawn, Quaternion.identity);
-
-//             // Ensure facing left
-//             Vector3 scale = enemy.transform.localScale;
-//             if (scale.x > 0) scale.x *= -1;
-//             enemy.transform.localScale = scale;
-//         }
-//     }
-// }
-// using UnityEngine;
-// using System.Collections;
-
-// public class WaveSpawner : MonoBehaviour
-// {
-//     public GameObject enemyPrefab;
-//     public float spawnInterval = 5f;   // time between waves
-//     public int enemiesPerWave = 3;     // number of enemies per side per wave
-//     public float groundY = -2f;        // ground level Y position
-
-//     void Start()
-//     {
-//         StartCoroutine(SpawnLoop());
-//     }
-
-//     IEnumerator SpawnLoop()
-//     {
-//         while (true)
-//         {
-//             SpawnWave();
-//             yield return new WaitForSeconds(spawnInterval);
-//         }
-//     }
-
-//     void SpawnWave()
-//     {
-//         // LEFT side spawns
-//         for (int i = 0; i < enemiesPerWave; i++)
-//         {
-//             Vector2 leftSpawn = new Vector2(-9f, groundY);
-//             GameObject enemy = Instantiate(enemyPrefab, leftSpawn, Quaternion.identity);
-
-//             // Ensure facing right
-//             Vector3 scale = enemy.transform.localScale;
-//             if (scale.x < 0) scale.x *= -1;
-//             enemy.transform.localScale = scale;
-//         }
-
-//         // RIGHT side spawns
-//         for (int i = 0; i < enemiesPerWave; i++)
-//         {
-//             Vector2 rightSpawn = new Vector2(9f, groundY);
-//             GameObject enemy = Instantiate(enemyPrefab, rightSpawn, Quaternion.identity);
-
-//             // Ensure facing left
-//             Vector3 scale = enemy.transform.localScale;
-//             if (scale.x > 0) scale.x *= -1;
-//             enemy.transform.localScale = scale;
-//         }
-//     }
-// }
-
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 
-public class wavespawner : MonoBehaviour
+public class WaveSpawner : MonoBehaviour
 {
+    [Header("Enemy")]
     public GameObject enemyPrefab;
 
-    public int enemiesPerWave = 5;
+    [Header("Player")]
+    public Damageable player; // drag player here in inspector
+
+    [Header("Spawn Area")]
+    public float minX = -8f;
+    public float maxX = 8f;
     public float groundY = -2f;
 
-    private int enemiesAlive;
-    private int currentWave = 1;
+    [Header("Wave Settings")]
+    public int totalWaves = 6;
+    public float timeBetweenWaves = 4f;
+
+    [Header("Enemy Count")]
+    public int baseEnemies = 4;
+    public int waveIncrease = 2;
+
+    [Header("Difficulty")]
+    public float baseSpeed = 2f;
+    public float speedIncrease = 0.25f;
+
+    public int baseHealth = 2;
+    public int healthIncrease = 1;
+
+    int currentWave = 0;
+    bool playerDead = false;
 
     void Start()
     {
-        StartCoroutine(WaveLoop());
+        StartCoroutine(StartWaveSystem());
     }
 
-    IEnumerator WaveLoop()
+    IEnumerator StartWaveSystem()
     {
-        while (true)
+        while (currentWave < totalWaves && !playerDead)
         {
-            SpawnWave();
-
-            // Wait until all enemies die
-            yield return new WaitUntil(() => enemiesAlive <= 0);
+            // stop if player died
+            if (player != null && player.IsAlive == false)
+            {
+                playerDead = true;
+                Debug.Log("Player died. Stopping waves.");
+                yield break;
+            }
 
             currentWave++;
-            enemiesPerWave += 2; // optional difficulty scaling
 
-            yield return new WaitForSeconds(2f);
-        }
-    }
+            int minEnemies = baseEnemies + (currentWave * waveIncrease);
+            int maxEnemies = minEnemies + 3;
 
-    void SpawnWave()
-    {
-        enemiesAlive = enemiesPerWave;
+            int enemiesThisWave = Random.Range(minEnemies, maxEnemies);
 
-        Debug.Log("Wave " + currentWave + " started with " + enemiesPerWave + " enemies.");
+            Debug.Log("Wave " + currentWave + " started with " + enemiesThisWave + " enemies");
 
-        for (int i = 0; i < enemiesPerWave; i++)
-        {
-            float xPos = (i % 2 == 0) ? -9f : 9f;
-            Vector2 spawnPos = new Vector2(xPos, groundY);
-
-                GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
-
-            // Subscribe to Damageable death event
-            Damageable dmg = enemy.GetComponent<Damageable>();
-            if (dmg != null)
+            for (int i = 0; i < enemiesThisWave; i++)
             {
-                dmg.onDeath += OnEnemyDeath;
+                if (player != null && player.IsAlive == false)
+                {
+                    playerDead = true;
+                    Debug.Log("Player died during wave.");
+                    yield break;
+                }
+
+                SpawnEnemy();
+
+                float spawnDelay = Mathf.Lerp(1.1f, 0.4f, (float)currentWave / totalWaves);
+                yield return new WaitForSeconds(Random.Range(spawnDelay * 0.6f, spawnDelay));
             }
+
+            yield return new WaitForSeconds(timeBetweenWaves);
+        }
+
+        if (!playerDead)
+        {
+            Debug.Log("All waves finished!");
         }
     }
 
-    void OnEnemyDeath()
+    void SpawnEnemy()
     {
-        enemiesAlive--; 
-        Debug.Log("Enemy died. Remaining: " + enemiesAlive);
+        float randomX = Random.Range(minX, maxX) + Random.Range(-1f, 1f);
+        Vector2 spawnPos = new Vector2(randomX, groundY);
+
+        GameObject enemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+
+        Demogorgan enemyMove = enemy.GetComponent<Demogorgan>();
+        Damageable dmg = enemy.GetComponent<Damageable>();
+
+        int newHealth = baseHealth + (currentWave * healthIncrease);
+
+        if (dmg != null)
+        {
+            dmg.MaxHealth = newHealth;
+        }
+
+        if (enemyMove != null)
+        {
+            float speed = baseSpeed + (currentWave * speedIncrease);
+
+            speed += Random.Range(-0.2f, 0.2f);
+            speed -= newHealth * 0.08f;
+
+            enemyMove.walkSpeed = Mathf.Clamp(speed, 1.7f, 3.3f);
+        }
     }
 }
